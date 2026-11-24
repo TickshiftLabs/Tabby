@@ -173,3 +173,22 @@ function newItemsById(existing, incoming, requireTabs) {
   }
   return added;
 }
+
+/**
+ * What an import should add: only items whose id is not already present.
+ * A snapshot id counts as present whether it is saved or in Trash, so an
+ * import never brings back something that was trashed, and never puts a
+ * second copy of a saved snapshot into Trash.
+ * @returns {{snapshots: Array, folders: Array, trash: Array}}
+ */
+function planImport(existing, incoming) {
+  const list = (value) => (Array.isArray(value) ? value : []);
+  const source = incoming || {};
+
+  const haveSnapshots = [...list(existing.snapshots), ...list(existing.trash)];
+  const snapshots = newItemsById(haveSnapshots, list(source.snapshots), true);
+  const trash = newItemsById([...haveSnapshots, ...snapshots], list(source.trash), true);
+  const folders = newItemsById(list(existing.folders), list(source.folders), false);
+
+  return { snapshots, folders, trash };
+}

@@ -39,7 +39,7 @@ function loadScripts(...relativePaths) {
     },
   };
 
-  const context = vm.createContext({ chrome, URL, URLSearchParams, console, structuredClone });
+  const context = vm.createContext({ chrome, URL, URLSearchParams, console, structuredClone, setTimeout, clearTimeout });
 
   // One combined script, so top-level const/function declarations share scope.
   const source = relativePaths

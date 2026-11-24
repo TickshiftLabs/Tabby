@@ -1,58 +1,59 @@
-// BACKGROUND ACTIONS — save operations and validation
+// BACKGROUND ACTIONS — save operations started from the right-click menu
 // Depends on: lib/urls.js (isSaveableTab), storage/dedup.js, storage/snapshots.js (saveSnapshot)
 
 async function saveThisTab(tab) {
   if (!isSaveableTab(tab, chrome.runtime.id)) {
-    showNotification("Cannot save this tab", "Browser internal pages cannot be saved.");
+    showSaveResult(false, "This page can't be saved");
     return;
   }
 
   await enrichTabsWithGroupInfo([tab]);
   const snapshot = await saveSnapshot([tab], "context-menu-tab");
   if (!snapshot) {
-    showNotification("No tabs to save", "Nothing to save.");
-    return;
-  }
-  if (snapshot.isDuplicate) {
-    showNotification("Already saved", "This tab is already in your vault.");
+    showSaveResult(false, "Nothing to save");
+  } else if (snapshot.isDuplicate) {
+    showSaveResult(true, "Already saved");
   } else {
-    showNotification("Tab saved", `Saved "${tab.title}" to Tabby`);
+    showSaveResult(true, "Saved 1 tab");
   }
 }
 
 async function saveThisWindow(windowId) {
   const tabs = await chrome.tabs.query({ windowId });
-
   const validTabs = tabs.filter((tab) => isSaveableTab(tab, chrome.runtime.id));
 
   if (validTabs.length === 0) {
-    showNotification("No tabs to save", "This window has no saveable tabs.");
+    showSaveResult(false, "Nothing to save in this window");
     return;
   }
 
   await enrichTabsWithGroupInfo(validTabs);
   const snapshot = await saveSnapshot(validTabs, "context-menu-window");
   if (!snapshot) {
-    showNotification("No tabs to save", "Nothing to save.");
-    return;
-  }
-  if (snapshot.isDuplicate) {
-    showNotification("Already saved", "These tabs are already in your vault.");
+    showSaveResult(false, "Nothing to save in this window");
+  } else if (snapshot.isDuplicate) {
+    showSaveResult(true, "Already saved");
   } else {
-    showNotification("Window saved", `Saved ${snapshot.tabs.length} tabs to Tabby`);
+    const count = snapshot.tabs.length;
+    showSaveResult(true, `Saved ${count} tab${count === 1 ? "" : "s"}`);
   }
 }
 
-function showNotification(title, message) {
-  // Use badge text as visual feedback since it's always visible
-  chrome.action.setBadgeText({ text: "✓" });
-  chrome.action.setBadgeBackgroundColor({ color: "#4a7c59" });
+/**
+ * Show the outcome on the toolbar button, since there is no page to show it
+ * on: a green tick when the tabs are safely stored, an amber "!" when
+ * nothing was saved. The reason is the button's tooltip until it clears.
+ */
+function showSaveResult(saved, message) {
+  chrome.action.setBadgeText({ text: saved ? "✓" : "!" });
+  chrome.action.setBadgeBackgroundColor({ color: saved ? "#4a7c59" : "#b7791f" });
+  chrome.action.setTitle({ title: `Tabby — ${message}` });
 
-  // Clear badge after 2 seconds
-  setTimeout(() => {
-    chrome.action.setBadgeText({ text: "" });
-  }, 2000);
-
-  // Also log for debugging
-  console.log(`[Tabby] ${title}: ${message}`);
+  setTimeout(
+    () => {
+      chrome.action.setBadgeText({ text: "" });
+      chrome.action.setTitle({ title: "Tabby" });
+    },
+    saved ? 2000 : 4000
+  );
 }

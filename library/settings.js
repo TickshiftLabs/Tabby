@@ -85,9 +85,10 @@ async function handleImportFile(event) {
   if (!confirmed) return;
 
   const [snapshots, folders, trash] = await Promise.all([getAllSnapshots(), getAllFolders(), getTrashItems()]);
-  const addSnapshots = newItemsById(snapshots, inSnapshots, true);
-  const addFolders = newItemsById(folders, inFolders, false);
-  const addTrash = newItemsById(trash, inTrash, true);
+  const plan = planImport({ snapshots, folders, trash }, incoming);
+  const addSnapshots = plan.snapshots;
+  const addFolders = plan.folders;
+  const addTrash = plan.trash;
 
   // One write, so an import is all-or-nothing.
   await chrome.storage.local.set({

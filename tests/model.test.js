@@ -121,3 +121,41 @@ test("newItemsById keeps only unseen, well-formed items", () => {
   assert.deepEqual(call("newItemsById", existing, incoming, true).map((i) => i.id), ["b"]);
   assert.deepEqual(call("newItemsById", existing, incoming, false).map((i) => i.id), ["b", "c"]);
 });
+
+test("planImport adds only what is new", () => {
+  const existing = { snapshots: [{ id: "a", tabs: [] }], folders: [{ id: "f1" }], trash: [{ id: "t1", tabs: [] }] };
+  const incoming = {
+    snapshots: [{ id: "a", tabs: [] }, { id: "b", tabs: [] }],
+    folders: [{ id: "f1" }, { id: "f2" }],
+    trash: [{ id: "t1", tabs: [] }, { id: "t2", tabs: [] }],
+  };
+  const plan = call("planImport", existing, incoming);
+  assert.deepEqual(plan.snapshots.map((s) => s.id), ["b"]);
+  assert.deepEqual(plan.folders.map((f) => f.id), ["f2"]);
+  assert.deepEqual(plan.trash.map((t) => t.id), ["t2"]);
+});
+
+test("planImport does not bring back a snapshot that is now in Trash", () => {
+  const existing = { snapshots: [], folders: [], trash: [{ id: "x", trashType: "snapshot", tabs: [] }] };
+  const incoming = { snapshots: [{ id: "x", tabs: [] }], folders: [], trash: [] };
+  assert.deepEqual(call("planImport", existing, incoming).snapshots, []);
+});
+
+test("planImport does not add a trashed copy of a snapshot that is still saved", () => {
+  const existing = { snapshots: [{ id: "x", tabs: [] }], folders: [], trash: [] };
+  const incoming = { snapshots: [], folders: [], trash: [{ id: "x", trashType: "snapshot", tabs: [] }] };
+  assert.deepEqual(call("planImport", existing, incoming).trash, []);
+});
+
+test("planImport keeps one copy when a file lists the same id as saved and trashed", () => {
+  const existing = { snapshots: [], folders: [], trash: [] };
+  const incoming = { snapshots: [{ id: "x", tabs: [] }], folders: [], trash: [{ id: "x", tabs: [] }] };
+  const plan = call("planImport", existing, incoming);
+  assert.deepEqual(plan.snapshots.map((s) => s.id), ["x"]);
+  assert.deepEqual(plan.trash, []);
+});
+
+test("planImport tolerates missing or malformed lists", () => {
+  const plan = call("planImport", { snapshots: [], folders: [], trash: [] }, { snapshots: "nope" });
+  assert.deepEqual(plan, { snapshots: [], folders: [], trash: [] });
+});
