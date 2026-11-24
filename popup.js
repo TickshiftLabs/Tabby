@@ -1,4 +1,4 @@
-// POPUP UI — save the current window or tab, and jump to recent snapshots
+// POPUP UI — save the current window or tab, close duplicate tabs, and jump to recent snapshots
 // Depends on: lib/urls.js, lib/dates.js, storage/dedup.js, storage/snapshots.js,
 //             lib/domains.js (openTabsBySite), library/model.js, library/tidy-model.js,
 //             library/open.js
@@ -7,6 +7,9 @@ const SITES_SHOWN = 5; // sites listed before "Show all"
 
 let allSites = []; // [{domain, count, favicon}] across every window
 let showAllSites = false;
+let duplicateGroups = []; // [{url, keep, close}] pages open in more than one tab
+let dupeStep = "idle"; // "idle" | "confirm" | "done"
+let closedDuplicates = []; // tabs closed by the last clean-up, for Reopen
 let windowTabs = []; // saveable tabs in the current window
 let activeTab = null; // the current tab, if it can be saved
 
@@ -56,11 +59,108 @@ async function refresh() {
   activeTab = current && isSaveableTab(current, ownId) ? current : null;
 
   allSites = openTabsBySite(allTabs);
+  duplicateGroups = findDuplicateOpenTabs(allTabs, ownId);
 
   renderSaveButtons();
+  renderDuplicates();
   renderSites();
   renderRecent(snapshots);
   renderSummary(allTabs, snapshots, ownId);
+}
+
+// ── Duplicate open tabs ───────────────────────────────
+
+function extraTabs() {
+  return duplicateGroups.flatMap((group) => group.close);
+}
+
+/**
+ * The duplicate clean-up card: offer, then confirm once, then report with
+ * a way to reopen. Pinned tabs and extension pages are never included.
+ */
+function renderDuplicates() {
+  const box = document.getElementById("dupes");
+  const extras = extraTabs();
+
+  if (dupeStep === "done") {
+    box.hidden = false;
+    box.innerHTML = `
+      <span class="dupes-text">Closed ${tabCountLabel(closedDuplicates.length)}</span>
+      <span class="dupes-actions"><button class="chip" data-dupe="reopen">Reopen</button></span>`;
+    return;
+  }
+
+  if (extras.length === 0) {
+    box.hidden = true;
+    box.innerHTML = "";
+    dupeStep = "idle";
+    return;
+  }
+
+  box.hidden = false;
+  const pages = duplicateGroups.length;
+
+  if (dupeStep === "confirm") {
+    box.innerHTML = `
+      <span class="dupes-text">Close ${tabCountLabel(extras.length)}? One tab stays open for each page.</span>
+      <span class="dupes-actions">
+        <button class="chip" data-dupe="cancel">Cancel</button>
+        <button class="chip chip-primary" data-dupe="close">Close</button>
+      </span>`;
+    box.querySelector('[data-dupe="cancel"]').focus();
+    return;
+  }
+
+  box.innerHTML = `
+    <span class="dupes-text">${pages} page${pages === 1 ? " is" : "s are"} open more than once</span>
+    <span class="dupes-actions">
+      <button class="chip" data-dupe="ask">Close ${extras.length} duplicate${extras.length === 1 ? "" : "s"}</button>
+    </span>`;
+}
+
+async function closeDuplicates() {
+  // Look again first, so a tab that changed since the popup opened is kept.
+  const fresh = findDuplicateOpenTabs(await chrome.tabs.query({}), chrome.runtime.id);
+  const toClose = tabsStillListed(extraTabs(), fresh.flatMap((group) => group.close));
+
+  try {
+    if (toClose.length > 0) await chrome.tabs.remove(toClose.map((tab) => tab.id));
+    closedDuplicates = toClose;
+    dupeStep = toClose.length > 0 ? "done" : "idle";
+  } catch (err) {
+    console.error("[Tabby] Could not close duplicate tabs:", err);
+    dupeStep = "idle";
+  }
+  await refresh();
+}
+
+async function reopenDuplicates() {
+  for (const tab of closedDuplicates) {
+    const url = getTabUrl(tab);
+    if (!url) continue;
+    try {
+      await chrome.tabs.create({ url, windowId: tab.windowId, active: false });
+    } catch {
+      await chrome.tabs.create({ url, active: false }).catch(() => {});
+    }
+  }
+  closedDuplicates = [];
+  dupeStep = "idle";
+  await refresh();
+}
+
+function setupDuplicates() {
+  document.getElementById("dupes").addEventListener("click", (event) => {
+    const button = event.target.closest("[data-dupe]");
+    if (!button) return;
+    const action = button.dataset.dupe;
+
+    if (action === "ask") dupeStep = "confirm";
+    if (action === "cancel") dupeStep = "idle";
+    if (action === "ask" || action === "cancel") renderDuplicates();
+    if (action === "close") closeDuplicates();
+    if (action === "reopen") reopenDuplicates();
+  });
 }
 
 function siteRowHtml(site) {
@@ -168,6 +268,7 @@ async function refreshRecentOnly() {
 
 function setupButtons() {
   document.getElementById("theme-toggle").addEventListener("click", toggleTheme);
+  setupDuplicates();
 
   document.getElementById("save-window").addEventListener("click", (event) => {
     saveAndReport(event.currentTarget, windowTabs, "popup-window");
