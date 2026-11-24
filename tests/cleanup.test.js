@@ -10,15 +10,24 @@ test("retired keys are removed and everything else is kept", async () => {
     tabby_secret_config: { salt: "x" },
     tabby_secret_snapshots: [],
     tabby_snapshots: [{ id: "a" }],
+    tabby_folders: [{ id: "f" }],
     openrouterApiKey: "k",
+    openrouterModel: "m",
   });
 
   const removed = await ctx.evaluate("cleanupRetiredKeys()");
 
-  assert.deepEqual(Object.keys(ctx.store).sort(), ["openrouterApiKey", "tabby_snapshots"]);
+  assert.deepEqual(Object.keys(ctx.store).sort(), ["tabby_folders", "tabby_snapshots"]);
   assert.deepEqual(
     [...removed].sort(),
-    ["tabby_secret_config", "tabby_secret_snapshots", "tabby_sidebar_prefs", "tabby_tab_activity"]
+    [
+      "openrouterApiKey",
+      "openrouterModel",
+      "tabby_secret_config",
+      "tabby_secret_snapshots",
+      "tabby_sidebar_prefs",
+      "tabby_tab_activity",
+    ]
   );
 });
 

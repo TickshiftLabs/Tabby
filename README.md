@@ -119,8 +119,7 @@ See `docs/ARCHITECTURE.md` and `docs/DATA_MODEL.md` for details.
 Tabby’s roadmap is documented in `docs/ROADMAP.md`. Highlights include:
 
 - Search and filtering improvements
-- Parked for now, to return later: tags, notes, topics, and optional
-  local-AI naming and summaries
+- Parked for now, to return later: tags, notes and topics
 
 ## Development Notes
 

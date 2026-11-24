@@ -19,14 +19,14 @@ ACTIONS["toggle-theme"] = async () => {
 
 ACTIONS["settings-menu"] = (el) => {
   showMenu(el, [
-    { label: "Export…", onSelect: exportVault },
+    { label: "Export…", onSelect: exportLibrary },
     { label: "Import…", onSelect: () => document.getElementById("import-file").click() },
     { divider: true },
     { label: "Move everything to Trash", danger: true, onSelect: moveEverythingToTrash },
   ]);
 };
 
-async function exportVault() {
+async function exportLibrary() {
   const [snapshots, folders, trash] = await Promise.all([getAllSnapshots(), getAllFolders(), getTrashItems()]);
 
   const exportData = {
@@ -39,7 +39,7 @@ async function exportVault() {
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;
-  link.download = `tabby-vault-${new Date().toISOString().split("T")[0]}.json`;
+  link.download = `tabby-export-${new Date().toISOString().split("T")[0]}.json`;
   link.click();
   URL.revokeObjectURL(url);
 

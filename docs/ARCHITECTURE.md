@@ -25,4 +25,3 @@ Library page (search, restore, tidy up) and popup (save)
   and is tested with `node --test tests/`
 - Only `storage/` touches `chrome.storage.local`
 - No network access and no host permissions
-- AI assistance is parked; if it returns it stays optional and non-authoritative

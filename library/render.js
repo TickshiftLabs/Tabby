@@ -1,7 +1,7 @@
 // RENDERING ONLY — renders every pane from state
 // Depends on: library/render-places.js, render-list.js, render-detail.js
 
-const EMPTY_VAULT_MESSAGE =
+const EMPTY_LIBRARY_MESSAGE =
   "Nothing saved yet. Right-click any page and choose “Save this tab to Tabby”, or use the Tabby button in the toolbar.";
 
 function isSnapshotPlace() {
@@ -53,13 +53,13 @@ function renderPanes() {
   }
 
   const app = document.getElementById("app");
-  const vaultEmpty = state.snapshots.length === 0 && isSnapshotPlace();
-  app.classList.toggle("wide", vaultEmpty || state.place.type === "tidy");
+  const libraryEmpty = state.snapshots.length === 0 && isSnapshotPlace();
+  app.classList.toggle("wide", libraryEmpty || state.place.type === "tidy");
 
   renderPlaces();
 
-  if (vaultEmpty) {
-    document.getElementById("detail").innerHTML = `<div class="detail-empty">${EMPTY_VAULT_MESSAGE}</div>`;
+  if (libraryEmpty) {
+    document.getElementById("detail").innerHTML = `<div class="detail-empty">${EMPTY_LIBRARY_MESSAGE}</div>`;
     return;
   }
 

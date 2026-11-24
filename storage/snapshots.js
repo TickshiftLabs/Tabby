@@ -72,7 +72,6 @@ async function saveSnapshot(tabs, reason = "") {
     starred: false,
     folderId: null,
     note: null,
-    aiSummary: null,
     tabs: uniqueTabs,
   };
 
@@ -91,7 +90,7 @@ async function updateSnapshot(id, updates) {
   }
 
   // Only allow updating safe fields
-  const allowedFields = ["name", "customName", "tags", "starred", "folderId", "note", "aiSummary"];
+  const allowedFields = ["name", "customName", "tags", "starred", "folderId", "note"];
   for (const key of Object.keys(updates)) {
     if (allowedFields.includes(key)) {
       snapshots[index][key] = updates[key];

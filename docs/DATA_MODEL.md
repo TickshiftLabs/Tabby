@@ -15,7 +15,6 @@ not just a list of URLs.
 - createdAt: number (timestamp)
 - reason: string
 - note: string | null (optional, user-defined context)
-- aiSummary: string | null (optional, AI-generated label)
 - tabs: TabEntry[]
 - tags: string[] (optional, user-defined semantic labels)
 
@@ -38,7 +37,7 @@ not just a list of URLs.
 
 ## Parked fields
 
-`tags`, `note` and `aiSummary` belong to features that are parked for now (see `docs/ROADMAP.md`).
+`tags` and `note` belong to features that are parked for now (see `docs/ROADMAP.md`).
 They are kept on stored snapshots and in exports, but no UI shows or
 edits them.
 

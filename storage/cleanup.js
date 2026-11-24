@@ -2,12 +2,14 @@
 // Depends on: chrome.storage.local
 
 // Derived or UI-only data from features that no longer exist.
-const RETIRED_KEYS = ["tabby_tab_activity", "tabby_sidebar_prefs"];
+// The last two are the settings of the removed naming feature, one of which
+// was a key for a remote service.
+const RETIRED_KEYS = ["tabby_tab_activity", "tabby_sidebar_prefs", "openrouterApiKey", "openrouterModel"];
 const SECRET_KEYS = ["tabby_secret_config", "tabby_secret_snapshots"];
 
 /**
  * Remove storage keys that nothing reads any more. The Secret Vault keys
- * are only removed when the vault holds no snapshots, so nothing a person
+ * are only removed when it holds no snapshots, so nothing a person
  * saved is ever deleted here.
  * @returns {Promise<string[]>} the keys that were removed
  */

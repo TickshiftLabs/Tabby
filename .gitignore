@@ -5,7 +5,8 @@
 *.pem
 *.key
 
-# Personal data — vault exports contain your saved tabs
+# Personal data — exports contain your saved tabs
+tabby-export*.json
 tabby-vault*.json
 *.vault.json
 
