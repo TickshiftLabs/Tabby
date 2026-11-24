@@ -175,6 +175,20 @@ function newItemsById(existing, incoming, requireTabs) {
 }
 
 /**
+ * A copy of an imported snapshot or trash item that keeps only the tabs
+ * whose address is safe to open, with any unsafe icon address blanked.
+ * Returns null when the item had tabs and none of them could be kept.
+ */
+function importableItem(item) {
+  if (!Array.isArray(item.tabs)) return item;
+  const tabs = item.tabs
+    .filter((tab) => tab && isImportableUrl(tab.url))
+    .map((tab) => (tab.favicon && !isImportableIconUrl(tab.favicon) ? { ...tab, favicon: "" } : tab));
+  if (item.tabs.length > 0 && tabs.length === 0) return null;
+  return { ...item, tabs };
+}
+
+/**
  * What an import should add: only items whose id is not already present.
  * A snapshot id counts as present whether it is saved or in Trash, so an
  * import never brings back something that was trashed, and never puts a
@@ -186,8 +200,9 @@ function planImport(existing, incoming) {
   const source = incoming || {};
 
   const haveSnapshots = [...list(existing.snapshots), ...list(existing.trash)];
-  const snapshots = newItemsById(haveSnapshots, list(source.snapshots), true);
-  const trash = newItemsById([...haveSnapshots, ...snapshots], list(source.trash), true);
+  const clean = (items) => items.map(importableItem).filter(Boolean);
+  const snapshots = clean(newItemsById(haveSnapshots, list(source.snapshots), true));
+  const trash = clean(newItemsById([...haveSnapshots, ...snapshots], list(source.trash), true));
   const folders = newItemsById(list(existing.folders), list(source.folders), false);
 
   return { snapshots, folders, trash };

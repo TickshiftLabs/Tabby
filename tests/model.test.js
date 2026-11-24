@@ -159,3 +159,64 @@ test("planImport tolerates missing or malformed lists", () => {
   const plan = call("planImport", { snapshots: [], folders: [], trash: [] }, { snapshots: "nope" });
   assert.deepEqual(plan, { snapshots: [], folders: [], trash: [] });
 });
+
+test("planImport drops tabs whose address is not a web page or a local file", () => {
+  const existing = { snapshots: [], folders: [], trash: [] };
+  const incoming = {
+    snapshots: [
+      {
+        id: "a",
+        tabs: [
+          { url: "https://a.test/", title: "A" },
+          { url: "javascript:alert(1)", title: "script" },
+          { url: "data:text/html,<script>alert(1)</script>", title: "data" },
+          { url: "chrome://settings/", title: "internal" },
+          { url: "chrome-extension://other/page.html", title: "extension" },
+          { url: "file:///home/me/notes.html", title: "file" },
+          { title: "no address" },
+          null,
+        ],
+      },
+    ],
+    trash: [{ id: "t", trashType: "tab", tabs: [{ url: "javascript:alert(1)" }, { url: "http://b.test/" }] }],
+  };
+  const plan = call("planImport", existing, incoming);
+  assert.deepEqual(plan.snapshots[0].tabs.map((t) => t.url), ["https://a.test/", "file:///home/me/notes.html"]);
+  assert.deepEqual(plan.trash[0].tabs.map((t) => t.url), ["http://b.test/"]);
+});
+
+test("planImport skips an item left with no tabs it can open", () => {
+  const existing = { snapshots: [], folders: [], trash: [] };
+  const incoming = {
+    snapshots: [{ id: "a", tabs: [{ url: "javascript:alert(1)" }] }, { id: "b", tabs: [{ url: "https://b.test/" }] }],
+    trash: [{ id: "t", tabs: [{ url: "data:text/html,x" }] }],
+  };
+  const plan = call("planImport", existing, incoming);
+  assert.deepEqual(plan.snapshots.map((s) => s.id), ["b"]);
+  assert.deepEqual(plan.trash, []);
+});
+
+test("planImport blanks an icon address that is not a web or inline image", () => {
+  const existing = { snapshots: [], folders: [], trash: [] };
+  const incoming = {
+    snapshots: [
+      {
+        id: "a",
+        tabs: [
+          { url: "https://a.test/", favicon: "https://a.test/icon.png" },
+          { url: "https://b.test/", favicon: "data:image/png;base64,AAAA" },
+          { url: "https://c.test/", favicon: "javascript:alert(1)" },
+          { url: "https://d.test/", favicon: "file:///etc/passwd" },
+        ],
+      },
+    ],
+  };
+  const tabs = call("planImport", existing, incoming).snapshots[0].tabs;
+  assert.deepEqual(tabs.map((t) => t.favicon), ["https://a.test/icon.png", "data:image/png;base64,AAAA", "", ""]);
+});
+
+test("planImport does not change the file's own objects", () => {
+  const snapshot = { id: "a", tabs: [{ url: "https://a.test/" }, { url: "javascript:alert(1)" }] };
+  call("planImport", { snapshots: [], folders: [], trash: [] }, { snapshots: [snapshot] });
+  assert.equal(snapshot.tabs.length, 2);
+});
