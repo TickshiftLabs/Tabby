@@ -24,5 +24,4 @@ Each was removed from the UI when the Library was built. The stored data (`tags`
 
 ## Not planned
 
-- Secret Vault (removed; unused)
 - Cloud sync, accounts, or any backend
