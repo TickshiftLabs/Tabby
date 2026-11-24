@@ -104,6 +104,7 @@ See `docs/ARCHITECTURE.md` and `docs/DATA_MODEL.md` for details.
 ├─ icons/             # Extension icons
 ├─ lib/               # Pure helper utilities (urls, domains, dates)
 ├─ library/           # Library page modules (model, render, actions, tidy, settings)
+├─ site/              # The landing page at tabby.tickshift.dev (not part of the extension)
 ├─ storage/           # Local storage layer (snapshots, folders, trash)
 ├─ tests/             # Node tests for the pure logic and storage layer
 ├─ background.js      # MV3 service worker entry
@@ -111,6 +112,7 @@ See `docs/ARCHITECTURE.md` and `docs/DATA_MODEL.md` for details.
 ├─ popup.html         # Popup UI
 ├─ popup.js           # Popup logic
 ├─ library.html       # Library page
+├─ wrangler.jsonc     # Publishes site/ as the landing page
 └─ README.md
 ```
 
@@ -127,6 +129,8 @@ Tabby’s roadmap is documented in `docs/ROADMAP.md`. Highlights include:
 - No build step required.
 - UI assets live in `popup.*`, `library.*` and `library/`.
 - Run the tests with `node --test tests/` (no dependencies to install).
+- `site/` and `wrangler.jsonc` are the landing page, not the extension. Leave them, `docs/` and
+  `tests/` out of any zip you upload to an extension store.
 
 ## Contributing
 

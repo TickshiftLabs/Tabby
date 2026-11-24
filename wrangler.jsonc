@@ -1,0 +1,12 @@
+// Tells Cloudflare what to publish as tabby.tickshift.dev: the site/ folder only, served as plain static files.
+// The extension's own files in the rest of the repository are not published. There is no build step and no
+// server code. "name" must match the project name in the Cloudflare dashboard.
+{
+  "name": "tabby",
+  "compatibility_date": "2026-11-23",
+  "assets": {
+    "directory": "./site",
+    "html_handling": "auto-trailing-slash",
+    "not_found_handling": "none"
+  }
+}

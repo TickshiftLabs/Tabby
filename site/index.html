@@ -1,0 +1,323 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tabby: close your tabs, keep your place</title>
+<meta name="description" content="Tabby is a free, open-source browser extension that saves your open tabs as searchable snapshots and restores them later. No account, and nothing leaves your browser.">
+<link rel="canonical" href="https://tabby.tickshift.dev/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Tickshift Labs">
+<meta property="og:title" content="Tabby: close your tabs, keep your place">
+<meta property="og:description" content="Tabby is a free, open-source browser extension that saves your open tabs as searchable snapshots and restores them later. No account, and nothing leaves your browser.">
+<meta property="og:url" content="https://tabby.tickshift.dev/">
+<meta property="og:image" content="https://tabby.tickshift.dev/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Tabby. Close your tabs. Keep your place. Beside it, a screenshot of Tabby's library of saved tabs.">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=Figtree:wght@400;500;600&family=IBM+Plex+Mono:wght@400&display=swap">
+<style>
+/* The page at tabby.tickshift.dev: Tabby's landing page. It lives in this folder (site/), apart from the
+   extension itself, and is the only part of the repository that is published as a website.
+   Colours are the same as the Tickshift Labs site, but the fonts
+   are Tabby's own: Bricolage Grotesque for headings and Figtree for text, softer than the lab's. The mono
+   font is used only for things the reader types. The header carries Tabby's own name and icon; Tickshift Labs
+   appears as a link beside it and in the footer.
+   Light is the default; the button switches the theme, and the choice is remembered.
+   Screenshots come from the Tabby repository and show made-up sample data. Where a screenshot exists in both
+   themes, the page shows the one that matches (.for-light / .for-dark).
+   Everything said here is taken from Tabby's README and code: what it does, how it is installed, and what it
+   does not do (no account, no network access). */
+:root {
+  color-scheme: light;
+  --bg: #F6F7F9; --surface: #FFFFFF; --fg: #0B0D14; --muted: #5B6272; --line: #DFE2E9; --bg-rgb: 246, 247, 249;
+  --display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --body: "Figtree", "Segoe UI", system-ui, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #0A0C12; --surface: #11141C; --fg: #ECEEF4; --muted: #959CAE; --line: #222632; --bg-rgb: 10, 12, 18;
+}
+*, *::before, *::after { box-sizing: border-box; }
+html { scroll-behavior: smooth; scroll-padding-top: 80px; }
+body { margin: 0; background: var(--bg); color: var(--fg); font-family: var(--body); font-size: 17px; line-height: 1.65; }
+a { color: inherit; }
+img { max-width: 100%; }
+:focus-visible { outline: 2px solid var(--fg); outline-offset: 3px; border-radius: 4px; }
+.inner { max-width: 1120px; margin: 0 auto; padding-inline: 20px; }
+
+/* ---------- header and footer, as on the other project page ---------- */
+.site-header { position: sticky; top: 0; z-index: 50; border-bottom: 1px solid var(--line); background: rgba(var(--bg-rgb), .82); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); }
+.site-header .inner { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding-block: 12px; }
+.logo { display: flex; align-items: center; gap: 10px; font: 700 24px/1 var(--display); letter-spacing: -.02em; color: var(--fg); text-decoration: none; white-space: nowrap; }
+.logo img { width: 34px; height: 34px; border-radius: 9px; flex: none; display: block; }
+/* Who makes it, in small type beside the name: the same place as on the Visual Flow site. */
+.brand { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.byline { font-size: 13px; color: var(--muted); text-decoration: none; white-space: nowrap; }
+.byline:hover { color: var(--fg); }
+.header-right { display: flex; align-items: center; gap: 18px; font-size: 15px; font-weight: 500; }
+.header-right a { color: var(--muted); text-decoration: none; }
+.header-right a:hover { color: var(--fg); }
+.theme-toggle { font: 500 14px var(--body); color: var(--fg); background: var(--surface); border: 1px solid var(--line); border-radius: 999px; padding: 8px 14px; cursor: pointer; }
+.theme-toggle:hover { border-color: var(--muted); }
+.site-footer { border-top: 1px solid var(--line); }
+.site-footer .inner { padding-block: 28px; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px 24px; font-size: 14px; color: var(--muted); }
+.site-footer a { text-decoration: none; color: var(--fg); }
+.site-footer a:hover { text-decoration: underline; }
+
+/* ---------- shared pieces ---------- */
+.tag { font-family: var(--body); font-weight: 600; font-size: 13px; letter-spacing: .09em; text-transform: uppercase; color: var(--muted); }
+.tag b { font-weight: 600; color: var(--fg); margin-right: .6em; }
+h1, h2, h3 { font-family: var(--display); font-weight: 700; letter-spacing: -.025em; text-wrap: balance; }
+h2 { font-size: clamp(28px, 3.8vw, 42px); line-height: 1.08; margin: 0 0 12px; }
+h3 { font-family: var(--body); font-weight: 600; font-size: 20px; line-height: 1.25; letter-spacing: -.01em; margin: 0 0 6px; }
+p { margin: 0 0 16px; }
+p:last-child { margin-bottom: 0; }
+.sub { color: var(--muted); max-width: 60ch; margin-bottom: 0; }
+section { border-top: 1px solid var(--line); padding-block: clamp(44px, 7vw, 84px); }
+.cta { display: flex; flex-wrap: wrap; gap: 12px; }
+.btn { display: inline-flex; align-items: center; font: 600 16px var(--body); text-decoration: none; padding: 13px 22px; border-radius: 10px; border: 1px solid transparent; }
+.btn.primary { background: var(--fg); color: var(--bg); }
+.btn.primary:hover { opacity: .86; }
+.btn.ghost { border-color: var(--line); color: var(--fg); background: var(--surface); }
+.btn.ghost:hover { border-color: var(--muted); }
+.shot { display: block; width: 100%; height: auto; border-radius: 12px; border: 1px solid var(--line); }
+/* One screenshot per theme: only the one that matches the page is shown. */
+.for-dark, :root[data-theme="dark"] .for-light { display: none; }
+:root[data-theme="dark"] .for-dark { display: block; }
+
+/* ---------- hero: name, one line, two buttons, then the library screenshot at full width ---------- */
+.hero { padding-block: clamp(40px, 7vw, 84px) clamp(36px, 6vw, 72px); text-align: center; }
+.hero .tag { display: block; }
+h1 { font-size: clamp(42px, 7vw, 80px); line-height: 1; margin: 16px auto 20px; max-width: 14ch; }
+.hero .lede { font-size: clamp(18px, 1.8vw, 21px); color: var(--muted); max-width: 56ch; margin: 0 auto 28px; }
+.hero .cta { justify-content: center; }
+.hero .works-in { margin: 18px 0 0; font-size: 14px; color: var(--muted); }
+.hero-shot { margin-top: clamp(32px, 5vw, 56px); box-shadow: 0 40px 80px -50px rgba(0, 0, 0, .5); }
+
+/* ---------- what it does: six short entries in a grid ---------- */
+.features { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 32px 28px; margin-top: clamp(28px, 4vw, 44px); }
+.features > div { padding-top: 16px; border-top: 1px solid var(--muted); }
+.features p { color: var(--muted); font-size: 16px; }
+
+/* ---------- a closer look: picture on one side, text on the other, sides swapping row by row ---------- */
+.look { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, .75fr); gap: clamp(24px, 5vw, 64px); align-items: center; margin-top: clamp(36px, 6vw, 72px); }
+.look.flip { grid-template-columns: minmax(0, .75fr) minmax(0, 1.25fr); }
+.look.flip > .pic { order: 2; }
+.look p { color: var(--muted); }
+.look .tag { display: block; margin-bottom: 10px; }
+/* The popup is tall and narrow, so it sits centred on a quiet panel instead of filling the column. */
+.pic.panel { display: grid; place-items: center; padding: clamp(20px, 4vw, 40px); background: var(--surface); border: 1px solid var(--line); border-radius: 16px; }
+.pic.panel .shot { width: min(270px, 100%); box-shadow: 0 30px 60px -40px rgba(0, 0, 0, .55); }
+
+/* ---------- install: four numbered steps in a row ---------- */
+.steps { list-style: none; margin: clamp(28px, 4vw, 44px) 0 0; padding: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 18px; counter-reset: step; }
+.steps li { counter-increment: step; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px 18px; }
+.steps li::before { content: counter(step); display: block; font: 700 22px/1 var(--display); color: var(--muted); margin-bottom: 10px; }
+.steps p { color: var(--muted); font-size: 15px; line-height: 1.55; }
+.steps code, .note code { font-family: var(--mono); font-size: .88em; color: var(--fg); background: rgba(var(--bg-rgb), 1); border: 1px solid var(--line); border-radius: 6px; padding: 1px 6px; white-space: nowrap; }
+.note { margin-top: 22px; font-size: 14px; color: var(--muted); }
+
+/* ---------- private by design, and the closing call ---------- */
+.three { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 28px; margin-top: clamp(28px, 4vw, 44px); }
+.three > div { padding-top: 16px; border-top: 1px solid var(--muted); }
+.three p { color: var(--muted); font-size: 16px; }
+.closing { text-align: center; }
+.closing h2 { font-size: clamp(32px, 5vw, 56px); max-width: 16ch; margin: 0 auto 14px; }
+.closing .sub { margin: 0 auto 26px; }
+.closing .cta { justify-content: center; }
+
+/* Motion: the script adds .reveal to blocks below the top of the page and .in when they scroll into view, once.
+   A block rises 10px in half a second and sharpens out of a slight blur as it arrives.
+   Without the script, or with reduced motion, nothing is hidden. */
+.reveal { opacity: 0; transform: translateY(10px); filter: blur(6px); transition: opacity .5s ease, transform .5s cubic-bezier(.16, 1, .3, 1), filter .5s ease; }
+.reveal.in { opacity: 1; transform: none; filter: none; }
+/* The one exception is the six feature entries. Each row of three starts as an untidy pile in the middle column,
+   like a stack of tabs, and fans out into place. */
+.features > .reveal { filter: none; transition: opacity .45s ease, transform .8s cubic-bezier(.2, .8, .2, 1); }
+.features > .reveal:not(.in):nth-child(3n + 1) { transform: translateX(calc(100% + 28px)) rotate(-5deg); }
+.features > .reveal:not(.in):nth-child(3n + 2) { transform: translateY(14px) rotate(3deg); }
+.features > .reveal:not(.in):nth-child(3n) { transform: translateX(calc(-100% - 28px)) rotate(6deg); }
+
+@media (max-width: 900px) {
+  .features, .three { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .steps { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .look { grid-template-columns: minmax(0, 1fr); }
+  .look.flip { grid-template-columns: minmax(0, 1fr); }
+  /* fewer than three columns: there is no middle to pile into, so the entries drop in with a slight turn */
+  .features > .reveal:not(.in):nth-child(n) { transform: translateY(-18px) rotate(-3deg); }
+  .features > .reveal:not(.in):nth-child(even) { transform: translateY(-18px) rotate(3deg); }
+  .look.flip > .pic { order: 0; }
+}
+@media (max-width: 560px) {
+  .features, .three, .steps { grid-template-columns: minmax(0, 1fr); }
+  .header-right { gap: 12px; }
+  .wide-only { display: none; }
+  .hero .cta .btn, .closing .cta .btn { flex: 1 1 100%; justify-content: center; }
+}
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+</style>
+</head>
+<body id="top">
+
+<header class="site-header">
+  <div class="inner">
+    <div class="brand">
+      <a class="logo" href="#top" aria-label="Tabby, top of page"><img src="icon.svg" width="34" height="34" alt="">Tabby</a>
+      <a class="byline" href="https://tickshift.dev">by Tickshift Labs</a>
+    </div>
+    <div class="header-right">
+      <a class="wide-only" href="#install">Install</a>
+      <a class="wide-only" href="https://github.com/TickshiftLabs/Tabby" target="_blank" rel="noopener">GitHub</a>
+      <button type="button" class="theme-toggle" id="theme-toggle">Dark</button>
+    </div>
+  </div>
+</header>
+
+<main>
+  <div class="inner hero">
+    <span class="tag"><b>Browser extension</b>Free &middot; open source</span>
+    <h1>Close your tabs. Keep your place.</h1>
+    <p class="lede">Tabby saves every tab in a window with one click, so you can close them without losing anything. Search what you saved, and bring it back when you need it.</p>
+    <div class="cta">
+      <a class="btn primary" href="https://github.com/TickshiftLabs/Tabby" target="_blank" rel="noopener">Get Tabby on GitHub</a>
+      <a class="btn ghost" href="#install">How to install</a>
+    </div>
+    <p class="works-in">For Chrome, Brave, Edge and other Chromium browsers</p>
+    <img class="shot hero-shot for-light" src="library-light.jpg" width="1600" height="1000" alt="Tabby's library: folders on the left, a list of saved snapshots in the middle, and the tabs of the selected snapshot grouped by site on the right">
+    <img class="shot hero-shot for-dark" src="library-dark.jpg" width="1600" height="1000" alt="Tabby's library: folders on the left, a list of saved snapshots in the middle, and the tabs of the selected snapshot grouped by site on the right">
+  </div>
+
+  <section>
+    <div class="inner">
+      <h2>Open tabs are unfinished thinking.</h2>
+      <p class="sub">You keep them open because you are not done with them. Tabby holds on to them for you, so the browser can be empty and nothing is lost.</p>
+      <div class="features">
+        <div><h3>Save a window in one click</h3><p>Save the whole window or just the current tab, from the toolbar or the right-click menu. Each save is a snapshot you can name.</p></div>
+        <div><h3>Search everything you saved</h3><p>Find a tab by its title, its site or its address, across every snapshot at once.</p></div>
+        <div><h3>Folders and stars</h3><p>File snapshots into folders such as Work, Home or Travel, and star the ones you return to.</p></div>
+        <div><h3>Restore the whole set</h3><p>Bring a snapshot back in one go, with its Chrome tab groups as they were.</p></div>
+        <div><h3>Tidy up what is open</h3><p>See which open tabs are already saved or open more than once, and close them together. Pinned tabs are left alone.</p></div>
+        <div><h3>Nothing is deleted by accident</h3><p>Opening a saved tab moves it to Trash, with Undo. Things in Trash stay there until you empty it.</p></div>
+      </div>
+
+      <div class="look">
+        <div class="pic panel">
+          <img class="shot for-light" src="popup-light.jpg" width="680" height="1300" loading="lazy" alt="Tabby's popup: a large Save this window button, a note that two pages are open more than once, a list of open tabs by site, and recently saved snapshots">
+          <img class="shot for-dark" src="popup-dark.jpg" width="680" height="1300" loading="lazy" alt="Tabby's popup: a large Save this window button, a note that two pages are open more than once, a list of open tabs by site, and recently saved snapshots">
+        </div>
+        <div>
+          <span class="tag">The popup</span>
+          <h3>One button does the main job</h3>
+          <p>Click the Tabby icon and choose Save this window. The popup also shows which sites your open tabs belong to, how many are already saved, and whether any page is open twice.</p>
+        </div>
+      </div>
+      <div class="look flip">
+        <div class="pic"><img class="shot" src="search.jpg" width="1600" height="1000" loading="lazy" alt="Searching for github in Tabby: two snapshots match, and the matching tabs are listed with the search word highlighted"></div>
+        <div>
+          <span class="tag">Search</span>
+          <h3>Find the tab, not the day you saved it</h3>
+          <p>Type a word and Tabby shows every snapshot that holds a match, with the matching tabs highlighted. Press <b>/</b> to jump to the search box.</p>
+        </div>
+      </div>
+      <div class="look">
+        <div class="pic"><img class="shot" src="tidy-up.jpg" width="1600" height="875" loading="lazy" alt="Tabby's Tidy up page: nine open tabs are already saved and safe to close, and two pages are open more than once"></div>
+        <div>
+          <span class="tag">Tidy up</span>
+          <h3>Close what you no longer need open</h3>
+          <p>Tidy up lists the open tabs that are already saved, and the pages you have open more than once. You see the list before anything closes, and nothing you saved is removed.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="install">
+    <div class="inner">
+      <h2>Install it in four steps.</h2>
+      <p class="sub">Tabby is not on the Chrome Web Store, so it is loaded by hand. It takes about a minute, and there is nothing to build.</p>
+      <ol class="steps">
+        <li><h3>Download</h3><p>Get the code from GitHub as a <a href="https://github.com/TickshiftLabs/Tabby/archive/refs/heads/main.zip">zip file</a> and unzip it.</p></li>
+        <li><h3>Open extensions</h3><p>Go to <code>chrome://extensions</code> in your browser's address bar.</p></li>
+        <li><h3>Developer mode</h3><p>Turn on the Developer mode switch at the top of that page.</p></li>
+        <li><h3>Load unpacked</h3><p>Click Load unpacked and choose the folder you unzipped. Pin Tabby to the toolbar.</p></li>
+      </ol>
+      <p class="note">In Brave the address is <code>brave://extensions</code>, and in Edge it is <code>edge://extensions</code>.</p>
+    </div>
+  </section>
+
+  <section>
+    <div class="inner">
+      <h2>Your tabs stay on your computer.</h2>
+      <p class="sub">A list of everything you have open says a lot about you. Tabby is built so that list never leaves your browser.</p>
+      <div class="three">
+        <div><h3>No account</h3><p>There is nothing to sign up for, no server behind it, and no sync to a cloud.</p></div>
+        <div><h3>No access to websites</h3><p>Tabby asks for no permission to read or change the pages you visit, and its code makes no network requests.</p></div>
+        <div><h3>A file you can read</h3><p>Export everything as one plain JSON file for a backup, and import it again on another computer.</p></div>
+      </div>
+      <p class="note">One thing to know: the small site icons beside saved tabs are loaded from the sites themselves, so showing an icon contacts that site.</p>
+    </div>
+  </section>
+
+  <section class="closing">
+    <div class="inner">
+      <h2>Save the window. Close the tabs.</h2>
+      <p class="sub">Free, open source under the MIT licence, and yours to change.</p>
+      <div class="cta">
+        <a class="btn primary" href="https://github.com/TickshiftLabs/Tabby" target="_blank" rel="noopener">Get Tabby on GitHub</a>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <div class="inner">
+    <span>Tabby is made by <a href="https://tickshift.dev">Tickshift Labs</a> &middot; &copy; <span id="year">2026</span></span>
+    <a href="https://tickshift.dev/#work">More from the labs</a>
+  </div>
+</footer>
+
+<script>
+(function () {
+  var root = document.documentElement, btn = document.getElementById('theme-toggle'), KEY = 'tickshift-theme';
+  function apply(theme) {
+    root.setAttribute('data-theme', theme);
+    btn.textContent = theme === 'dark' ? 'Light' : 'Dark';   // the button names the theme it switches to
+    btn.setAttribute('aria-label', 'Switch to ' + (theme === 'dark' ? 'light' : 'dark') + ' theme');
+  }
+  // Use the theme chosen on an earlier visit, if there is one. Light otherwise.
+  var saved = null;
+  try { saved = localStorage.getItem(KEY); } catch (e) {}
+  apply(saved === 'dark' ? 'dark' : 'light');
+  btn.addEventListener('click', function () {
+    var next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+    apply(next);
+    try { localStorage.setItem(KEY, next); } catch (e) {}
+  });
+  document.getElementById('year').textContent = new Date().getFullYear();
+
+  // Blocks arrive as they scroll into view. Neighbours are staggered by 60ms.
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches || !('IntersectionObserver' in window)) return;
+  var revealer = new IntersectionObserver(function (entries) {
+    entries.forEach(function (entry) {
+      if (!entry.isIntersecting) return;
+      revealer.unobserve(entry.target);
+      entry.target.classList.add('in');
+    });
+  }, { threshold: 0.12, rootMargin: '0px 0px -6% 0px' });
+  document.querySelectorAll('section h2, section .sub, .features > div, .look, .steps > li, .three > div, .note, .closing .cta').forEach(function (el) {
+    var position = Array.prototype.indexOf.call(el.parentNode.children, el);
+    // Feature entries are timed within their own row of three, so the second row does not wait for the first.
+    if (el.parentNode.classList.contains('features')) position = position % 3;
+    el.style.transitionDelay = Math.min(position, 5) * 60 + 'ms';
+    el.classList.add('reveal');
+    revealer.observe(el);
+  });
+})();
+</script>
+</body>
+</html>
