@@ -1,0 +1,39 @@
+# Secrets — never commit
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Personal data — vault exports contain your saved tabs
+tabby-vault*.json
+*.vault.json
+
+# Packaged extension builds
+*.crx
+*.zip
+dist/
+build/
+
+# Dependencies (none today; here in case tooling is added)
+node_modules/
+
+# Internal working notes and AI assistant tooling — kept locally, not published
+CLAUDE.md
+CLAUDE.local.md
+.claude/
+.superpowers/
+docs/MILESTONES.md
+
+# Editors
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log

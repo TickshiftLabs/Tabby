@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tabby</title>
+  <link rel="icon" href="icons/icon-48.png">
+  <link rel="stylesheet" href="library.css">
+</head>
+<body>
+  <div class="app" id="app">
+    <!-- Left: places -->
+    <aside class="places-pane">
+      <button class="brand" data-action="toggle-places" title="Show or hide the sidebar">
+        <img src="icons/icon-48.png" alt="">
+        <span class="brand-name">Tabby</span>
+      </button>
+      <label class="search">
+        <input id="search" type="search" placeholder="Search saved tabs" autocomplete="off" spellcheck="false">
+        <kbd>/</kbd>
+      </label>
+      <nav id="places" class="places"></nav>
+      <div class="places-foot" id="places-foot"></div>
+    </aside>
+
+    <!-- Middle: snapshot list -->
+    <section class="list-pane">
+      <header class="list-head">
+        <h2 id="list-title"></h2>
+        <button id="sort" class="quiet-btn" data-action="toggle-sort"></button>
+      </header>
+      <div id="list" class="list"></div>
+    </section>
+
+    <!-- Right: detail -->
+    <main id="detail" class="detail"></main>
+  </div>
+
+  <!-- Pure helper libraries -->
+  <script src="lib/urls.js"></script>
+  <script src="lib/domains.js"></script>
+  <script src="lib/dates.js"></script>
+  <!-- Storage layer (order matters) -->
+  <script src="storage/dedup.js"></script>
+  <script src="storage/snapshots.js"></script>
+  <script src="storage/folders.js"></script>
+  <script src="storage/trash.js"></script>
+  <!-- Library (order matters) -->
+  <script src="library/model.js"></script>
+  <script src="library/tidy-model.js"></script>
+  <script src="library/state.js"></script>
+  <script src="library/dialogs.js"></script>
+  <script src="library/restore.js"></script>
+  <script src="library/render-places.js"></script>
+  <script src="library/render-list.js"></script>
+  <script src="library/render-detail.js"></script>
+  <script src="library/render-trash.js"></script>
+  <script src="library/render.js"></script>
+  <script src="library/load.js"></script>
+  <script src="library/actions.js"></script>
+  <script src="library/tidy.js"></script>
+  <script src="library/settings.js"></script>
+  <script src="library/init.js"></script>
+</body>
+</html>

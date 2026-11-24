@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tabby</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <header class="head">
+    <img src="icons/icon-48.png" alt="">
+    <h1>Tabby</h1>
+    <button id="theme-toggle" class="quiet theme-btn" aria-label="Switch between light and dark theme"><svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg><svg class="icon-moon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></button>
+  </header>
+
+  <button id="save-window" class="primary" disabled>Save this window</button>
+  <button id="save-tab" class="secondary" disabled>Save just this tab</button>
+
+  <section id="sites" class="block" hidden>
+    <h2>Open tabs by site</h2>
+    <div id="site-list"></div>
+    <button id="sites-more" class="quiet more" hidden></button>
+  </section>
+
+  <section id="recent" class="recent" hidden>
+    <h2>Recently saved</h2>
+    <div id="recent-list"></div>
+  </section>
+
+  <footer class="foot">
+    <span id="open-summary"></span>
+    <button id="open-library" class="link">Open Tabby →</button>
+  </footer>
+
+  <!-- Pure helper libraries -->
+  <script src="lib/urls.js"></script>
+  <script src="lib/domains.js"></script>
+  <script src="lib/dates.js"></script>
+  <!-- Storage layer (order matters) -->
+  <script src="storage/dedup.js"></script>
+  <script src="storage/snapshots.js"></script>
+  <!-- Shared pure logic -->
+  <script src="library/model.js"></script>
+  <script src="library/tidy-model.js"></script>
+  <script src="library/open.js"></script>
+  <!-- UI -->
+  <script src="popup.js"></script>
+</body>
+</html>
